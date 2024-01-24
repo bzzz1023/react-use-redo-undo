@@ -1,1 +1,188 @@
-!function(e,r){if("object"==typeof exports&&"object"==typeof module)module.exports=r(require("react"),require("lodash"));else if("function"==typeof define&&define.amd)define(["react","lodash"],r);else{var t="object"==typeof exports?r(require("react"),require("lodash")):r(e.react,e.lodash);for(var n in t)("object"==typeof exports?exports:e)[n]=t[n]}}(self,((e,r)=>(()=>{"use strict";var t={467:e=>{e.exports=r},156:r=>{r.exports=e}},n={};function o(e){var r=n[e];if(void 0!==r)return r.exports;var c=n[e]={exports:{}};return t[e](c,c.exports,o),c.exports}o.n=e=>{var r=e&&e.__esModule?()=>e.default:()=>e;return o.d(r,{a:r}),r},o.d=(e,r)=>{for(var t in r)o.o(r,t)&&!o.o(e,t)&&Object.defineProperty(e,t,{enumerable:!0,get:r[t]})},o.o=(e,r)=>Object.prototype.hasOwnProperty.call(e,r),o.r=e=>{"undefined"!=typeof Symbol&&Symbol.toStringTag&&Object.defineProperty(e,Symbol.toStringTag,{value:"Module"}),Object.defineProperty(e,"__esModule",{value:!0})};var c={};return(()=>{o.r(c),o.d(c,{default:()=>n});var e=o(156),r=o(467);const t={90:"z",89:"y",67:"c",86:"v"},n=({listenKeyboard:n})=>{const o=(0,e.useRef)({}),c=(0,e.useRef)(n),u=(0,e.useRef)(0),a=(0,e.useRef)([]),d=async()=>{const e=a.current[u.current+1];e&&(await e.redo(),u.current=u.current+1)},s=async()=>{if(u.current<0)return;const e=a.current[u.current];e&&(await e.undo(),u.current=u.current-1)},i=(0,r.debounce)((async function(e){if(console.log(u.current),!(u.current<0)&&c.current){const{metaKey:r,keyCode:n}=e;if(!r)return;switch(r&&`ctrl+${t[n]}`){case"ctrl+z":await s();break;case"ctrl+y":await d()}}}),200);return(0,e.useEffect)((()=>(function(e){e&&window.addEventListener("keydown",i)}(n),()=>{window.removeEventListener("keydown",i)})),[]),{registerCommand:e=>{const{commandName:r,execute:t,label:n}=e,{redo:c,undo:d}=t();if("function"!=typeof t||"function"!=typeof c||"function"!=typeof d)throw new Error("it is not function");o.current[r]=async e=>{const{redo:o,undo:c}=t(e);await o(),a.current.length>0&&(a.current=a.current.slice(0,u.current+1)),a.current.push({commandName:r,redo:o,undo:c,label:n}),u.current=a.current.length-1}},currentCommandIndex:u.current,commandQueue:a.current,commandMap:o.current,redo:d,undo:s,setKeyboardFlag:e=>{c.current=e}}}})(),c})()));
+!(function (e, r) {
+  "object" == typeof exports && "object" == typeof module
+    ? (module.exports = r(require("react")))
+    : "function" == typeof define && define.amd
+    ? define("react-use-redo-undo", ["react"], r)
+    : "object" == typeof exports
+    ? (exports["react-use-redo-undo"] = r(require("react")))
+    : (e["react-use-redo-undo"] = r(e.react));
+})(self, (e) =>
+  (() => {
+    "use strict";
+    var r = {
+        156: (r) => {
+          r.exports = e;
+        },
+      },
+      t = {};
+    function o(e) {
+      var n = t[e];
+      if (void 0 !== n) return n.exports;
+      var c = (t[e] = { exports: {} });
+      return r[e](c, c.exports, o), c.exports;
+    }
+    (o.n = (e) => {
+      var r = e && e.__esModule ? () => e.default : () => e;
+      return o.d(r, { a: r }), r;
+    }),
+      (o.d = (e, r) => {
+        for (var t in r)
+          o.o(r, t) &&
+            !o.o(e, t) &&
+            Object.defineProperty(e, t, { enumerable: !0, get: r[t] });
+      }),
+      (o.o = (e, r) => Object.prototype.hasOwnProperty.call(e, r)),
+      (o.r = (e) => {
+        "undefined" != typeof Symbol &&
+          Symbol.toStringTag &&
+          Object.defineProperty(e, Symbol.toStringTag, { value: "Module" }),
+          Object.defineProperty(e, "__esModule", { value: !0 });
+      });
+    var n = {};
+    return (
+      (() => {
+        o.r(n), o.d(n, { default: () => u });
+        var e = o(156);
+        const r = (e) =>
+          "[object Object]" === Object.prototype.toString.call(e);
+        function t(e) {
+          return "AsyncFunction" === e[Symbol.toStringTag];
+        }
+        const c = (e) =>
+            void 0 === e ||
+            "true" === e.toString() ||
+            !(!r(e) || !e.executeSuccess) ||
+            void 0,
+          a = (e) =>
+            !(r(e) && !e.executeSuccess) &&
+            (void 0 === e || "false" !== e.toString()) &&
+            void 0,
+          u = () => {
+            const [o, n] = (0, e.useState)({});
+            let [u, s] = (0, e.useState)(-1),
+              [m, d] = (0, e.useState)([]);
+            const i = (0, e.useCallback)((e) => {
+                const { commandName: r, execute: u, label: m } = e;
+                (o[r] = (e) => {
+                  try {
+                    const { redo: o, undo: n } = u(e),
+                      i = (t) => {
+                        const u = c(t),
+                          i = a(t);
+                        if (u)
+                          return (
+                            s(
+                              (e) => (
+                                d((t) => [
+                                  ...t.slice(0, e + 1),
+                                  {
+                                    commandName: r,
+                                    redo: o,
+                                    undo: n,
+                                    label: m,
+                                  },
+                                ]),
+                                e + 1
+                              )
+                            ),
+                            { executeSuccess: !0, params: e, commandName: r }
+                          );
+                        if (i)
+                          throw new Error(
+                            "something is wrong with returned value"
+                          );
+                        return {
+                          executeSuccess: !1,
+                          params: e,
+                          commandName: r,
+                        };
+                      };
+                    return t(o)
+                      ? new Promise((e) => {
+                          o().then((r) => {
+                            e(i(r));
+                          });
+                        })
+                      : i(o());
+                  } catch (e) {
+                    console.log(`${e}`);
+                  }
+                }),
+                  n({ ...o });
+              }, []),
+              l = (0, e.useCallback)(() => {
+                try {
+                  const e = m[u + 1];
+                  if (!e) return;
+                  const { redo: o, commandName: n } = e,
+                    d = (e) => {
+                      const t = c(e),
+                        o = a(e),
+                        u = (r(e) && e.params) || {};
+                      if (t)
+                        return (
+                          s((e) => e + 1),
+                          { executeSuccess: !0, params: u, commandName: n }
+                        );
+                      if (o)
+                        throw new Error(
+                          "something is wrong with returned value"
+                        );
+                      return { executeSuccess: !1, params: u, commandName: n };
+                    };
+                  return t(o)
+                    ? new Promise((e) => {
+                        o().then((r) => {
+                          e(d(r));
+                        });
+                      })
+                    : d(o());
+                } catch (e) {
+                  console.log(`Redo Error - ${e}`);
+                }
+              }, [m, u]),
+              p = (0, e.useCallback)(() => {
+                try {
+                  const e = m[u];
+                  if (!e) return;
+                  const { undo: o, commandName: n } = e,
+                    d = (e) => {
+                      const t = c(e),
+                        o = a(e),
+                        u = (r(e) && e.params) || {};
+                      if (t)
+                        return (
+                          s((e) => e - 1),
+                          { executeSuccess: !0, params: u, commandName: n }
+                        );
+                      if (o)
+                        throw new Error(
+                          "something is wrong with returned value"
+                        );
+                      return { executeSuccess: !1, params: u, commandName: n };
+                    };
+                  return t(o)
+                    ? new Promise((e) => {
+                        o().then((r) => {
+                          e(d(r));
+                        });
+                      })
+                    : d(o());
+                } catch (e) {
+                  console.log(`Undo Error - ${e}`);
+                }
+              }, [m, u]);
+            return {
+              registerCommand: i,
+              executeIndex: u,
+              commandQueue: m,
+              commandMap: o,
+              redo: l,
+              undo: p,
+            };
+          };
+      })(),
+      n
+    );
+  })()
+);

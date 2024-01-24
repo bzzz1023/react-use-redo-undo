@@ -1,23 +1,29 @@
 {
   "name": "react-use-redo-undo",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "",
   "main": "./dist/index.js",
   "scripts": {
     "build": "npx webpack --config webpack.config.js",
+    "build:module": "cross-env NODE_ENV=production BUILD_MODE=module webpack --config webpack.config.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
-    "lodash": "^4.17.21"
+    "@babel/preset-typescript": "^7.23.3",
+    "@types/react": "^18.2.48",
+    "@types/react-dom": "^18.2.18",
+    "ts-loader": "^9.5.1",
+    "typescript": "^5.3.3"
   },
   "devDependencies": {
     "@babel/core": "^7.22.5",
     "@babel/preset-env": "^7.22.5",
     "@babel/preset-react": "^7.22.5",
     "babel-loader": "^9.1.2",
+    "cross-env": "^7.0.3",
     "webpack": "^5.88.1",
     "webpack-cli": "^5.1.4"
   }
