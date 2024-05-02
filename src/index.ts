@@ -47,10 +47,13 @@ const getFailFlag = (executeRes: IExecuteRes) => {
 };
 
 const useReactRedoUndo = () => {
+  // 保存注册方法
   const [commandMap, setCommandMap] = useState<ICommandMap>({} as ICommandMap);
 
+  // 执行下标
   let [executeIndex, setExecuteIndex] = useState(-1);
 
+  // 执行过的方法
   let [commandQueue, setCommandQueue] = useState<ICommand[]>([]);
 
   const registerCommand = useCallback((command: ICommandParams) => {
