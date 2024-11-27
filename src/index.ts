@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useState } from "react";
 
 interface ICommandMap {
   [propName: string]: (param: any) => any;
@@ -8,7 +8,7 @@ interface IExecuteFunc {
   (params: any): { redo: Function; undo: Function };
 }
 
-interface ICommandParams {
+interface IRegisterCommandParams {
   commandName: string;
   execute: IExecuteFunc;
   label?: string;
@@ -21,9 +21,15 @@ interface ICommand {
   label?: string;
 }
 
+interface IExecuteReq {
+  executeSuccess: boolean;
+  params: any;
+}
+
 interface IExecuteRes {
   executeSuccess: boolean;
   params: any;
+  commandName: string
 }
 
 const isObject = (obj: Object) => {
@@ -34,13 +40,13 @@ function isAsyncFunction(fn: any) {
   return fn[Symbol.toStringTag] === "AsyncFunction";
 }
 
-const getSuccessFlag = (executeRes: IExecuteRes) => {
+const getSuccessFlag = (executeRes: IExecuteReq) => {
   if (executeRes === undefined) return true;
   if (executeRes.toString() === "true") return true;
   if (isObject(executeRes) && executeRes.executeSuccess) return true;
 };
 
-const getFailFlag = (executeRes: IExecuteRes) => {
+const getFailFlag = (executeRes: IExecuteReq) => {
   if (isObject(executeRes) && !executeRes.executeSuccess) return false;
   if (executeRes !== undefined && executeRes.toString() === "false")
     return false;
@@ -51,22 +57,22 @@ const useReactRedoUndo = () => {
   const [commandMap, setCommandMap] = useState<ICommandMap>({} as ICommandMap);
 
   // 执行下标
-  let [executeIndex, setExecuteIndex] = useState(-1);
+  let [executeIndex, setExecuteIndex] = useState<number>(-1);
 
   // 执行过的方法
   let [commandQueue, setCommandQueue] = useState<ICommand[]>([]);
 
-  const registerCommand = useCallback((command: ICommandParams) => {
+  const registerCommand = (command: IRegisterCommandParams) => {
     const { commandName, execute, label } = command;
     commandMap[commandName] = (params: any) => {
       try {
         const { redo, undo } = execute(params);
-        const executeFunc = (executeRes: IExecuteRes) => {
+        const executeFunc = (executeRes: IExecuteReq): IExecuteRes => {
           const successFlag = getSuccessFlag(executeRes);
           const failFlag = getFailFlag(executeRes);
           if (successFlag) {
             setExecuteIndex((preExecuteIndex: number) => {
-              setCommandQueue((preCommandQueue: ICommand[]) => {
+              setCommandQueue((preCommandQueue) => {
                 const newCommandQueue = preCommandQueue.slice(
                   0,
                   preExecuteIndex + 1
@@ -75,7 +81,7 @@ const useReactRedoUndo = () => {
                   commandName,
                   redo,
                   undo,
-                  label,
+                  label: label || commandName,
                 };
                 return [...newCommandQueue, newCommand];
               });
@@ -104,94 +110,92 @@ const useReactRedoUndo = () => {
       }
     };
     setCommandMap({ ...commandMap });
-  }, []);
+  }
 
-  const redo = useCallback(() => {
+  // 执行撤销or回退
+  const executeRedoUndo = ({ type, executeRes, commandName }): IExecuteRes => {
+    const successFlag = getSuccessFlag(executeRes);
+    const failFlag = getFailFlag(executeRes);
+    const customParams = (isObject(executeRes) && executeRes.params) || {};
+    if (successFlag) {
+      setExecuteIndex((preExecuteIndex: number) => {
+        let executeType = {
+          redo: 1,
+          undo: -1
+        }
+        return preExecuteIndex + executeType[type];
+      });
+      return {
+        executeSuccess: true,
+        params: customParams,
+        commandName,
+      };
+    } else if (!failFlag) {
+      return {
+        executeSuccess: false,
+        params: customParams,
+        commandName,
+      };
+    } else {
+      const msg = `something is wrong with returned value`;
+      throw new Error(`${msg}`);
+    }
+  };
+
+  const redo = () => {
     try {
       const funcMap = commandQueue[executeIndex + 1];
       if (!funcMap) return;
-      const { redo, commandName } = funcMap;
-      const executeFunc = (executeRes: IExecuteRes) => {
-        const successFlag = getSuccessFlag(executeRes);
-        const failFlag = getFailFlag(executeRes);
-        const customParams = (isObject(executeRes) && executeRes.params) || {};
-        if (successFlag) {
-          setExecuteIndex((preExecuteIndex) => {
-            return preExecuteIndex + 1;
-          });
-          return {
-            executeSuccess: true,
-            params: customParams,
-            commandName,
-          };
-        } else if (!failFlag) {
-          return {
-            executeSuccess: false,
-            params: customParams,
-            commandName,
-          };
-        } else {
-          const msg = `something is wrong with returned value`;
-          throw new Error(`${msg}`);
-        }
-      };
-      if (isAsyncFunction(redo)) {
+      const { redo: redoFunc, commandName } = funcMap;
+      if (isAsyncFunction(redoFunc)) {
         return new Promise((res) => {
-          redo().then((data: any) => {
-            res(executeFunc(data));
+          redoFunc().then((data: any) => {
+            res(executeRedoUndo({
+              type: "redo",
+              executeRes: data,
+              commandName
+            }));
           });
         });
       } else {
-        return executeFunc(redo());
+        return executeRedoUndo({
+          type: "redo",
+          executeRes: redoFunc(),
+          commandName
+        });
       }
     } catch (error) {
       console.log(`Redo Error - ${error}`);
     }
-  }, [commandQueue, executeIndex]);
+  }
 
-  const undo = useCallback(() => {
+  const undo = () => {
     try {
       const funcMap = commandQueue[executeIndex];
       if (!funcMap) return;
-      const { undo, commandName } = funcMap;
-      const executeFunc = (executeRes: IExecuteRes) => {
-        const successFlag = getSuccessFlag(executeRes);
-        const failFlag = getFailFlag(executeRes);
-        const customParams = (isObject(executeRes) && executeRes.params) || {};
-        if (successFlag) {
-          setExecuteIndex((preExecuteIndex: number) => {
-            return preExecuteIndex - 1;
-          });
-          return {
-            executeSuccess: true,
-            params: customParams,
-            commandName,
-          };
-        } else if (!failFlag) {
-          return {
-            executeSuccess: false,
-            params: customParams,
-            commandName,
-          };
-        } else {
-          const msg = `something is wrong with returned value`;
-          throw new Error(`${msg}`);
-        }
-      };
+      const { undo: undoFunc, commandName } = funcMap;
 
-      if (isAsyncFunction(undo)) {
+      if (isAsyncFunction(undoFunc)) {
         return new Promise((res) => {
-          undo().then((data: any) => {
-            res(executeFunc(data));
+          undoFunc().then((data: any) => {
+            res(executeRedoUndo({
+              type: "undo",
+              executeRes: data,
+              commandName
+            }));
           });
         });
       } else {
-        return executeFunc(undo());
+        return executeRedoUndo({
+          type: "undo",
+          executeRes: undoFunc(),
+          commandName
+        });
       }
     } catch (error) {
       console.log(`Undo Error - ${error}`);
     }
-  }, [commandQueue, executeIndex]);
+  }
 
   return {
     registerCommand,
